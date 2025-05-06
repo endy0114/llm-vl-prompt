@@ -1,0 +1,86 @@
+[
+    {
+        "id": "00001",
+        "name": "摆摊经营",
+        "prompt": "这是一张路口的监控抓帕图片，包含了一个摆摊经营的场景。请根据图片中的内容，判断是否存在摆摊经营的行为。",
+        "activate": false
+    },
+    {
+        "id": "00002",
+        "name": "车辆违停",
+        "prompt": "这是一张街道监控抓拍图片，包含了一个车辆违停的场景。请根据图片中的内容，判断是否存在车辆违停的行为。",
+        "activate": false
+    },
+    {
+        "id": "3",
+        "name": "道路积水",
+        "prompt": "算法3的描述",
+        "activate": false
+    },
+    {
+        "id": "4",
+        "name": "道路遗撒",
+        "prompt": "算法4的描述",
+        "activate": false
+    },
+    {
+        "id": "5",
+        "name": "共享单车",
+        "prompt": "算法5的描述",
+        "activate": false
+    },
+    {
+        "id": "6",
+        "name": "花坛、座椅损坏",
+        "prompt": "算法6的描述",
+        "activate": false
+    },
+    {
+        "id": "7",
+        "name": "井盖破损",
+        "prompt": "算法7的描述",
+        "activate": false
+    },
+    {
+        "id": "8",
+        "name": "垃圾满溢",
+        "prompt": "算法8的描述",
+        "activate": false
+    },
+    {
+        "id": "9",
+        "name": "麻木车经营",
+        "prompt": "算法9的描述",
+        "activate": false
+    },
+    {
+        "id": "10",
+        "name": "人群密集",
+        "prompt": "算法10的描述",
+        "activate": false
+    },
+    {
+        "id": "11",
+        "name": "污水外溢",
+        "prompt": "算法11的描述",
+        "activate": false
+    },
+    {
+        "id": "12",
+        "name": "消防通道占用",
+        "prompt": "算法12的描述",
+        "activate": false
+    },
+    {
+        "id": "00013",
+        "name": "烟火监测",
+        "prompt": "这是一张城市监控的抓拍图片，有近景和远景，有些是红外光抓拍有些是彩光抓拍。根据图片里面的亮光判断是否有烟火，需要注意晚上路灯的干扰。",
+        "activate": true
+    },
+    {
+        "id": "14",
+        "name": "占道经营",
+        "prompt": "算法14的描述",
+        "activate": false
+    }
+]

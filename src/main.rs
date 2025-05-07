@@ -27,16 +27,14 @@ async fn main() -> Result<(), anyhow::Error> {
     //     cli.image_path.unwrap(),
     // );
 
+    let config_path = cli.config_path.unwrap();
     let mut file_op = file_op::FileOp::new(
-        cli.config.unwrap(),
-        cli.algorithm_config.unwrap(),
+        format!("{}/{}", config_path, "config.json"),
+        format!("{}/{}", config_path, "algorithm.json"),
         cli.image_path.unwrap(),
     );
 
-    info!(
-        "文件操作对象构建成功, 配置文件路径: {:?}",
-        file_op.config_path
-    );
+    info!("文件操作对象构建成功, 配置文件路径: {:?}", config_path);
 
     if cli.rename {
         // 重命名图片

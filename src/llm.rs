@@ -7,6 +7,7 @@ use rig::{
 };
 use serde::{Deserialize, Serialize};
 use tokio::fs;
+use tracing::info;
 
 use crate::file_op::FileOp;
 
@@ -76,10 +77,10 @@ impl LLM {
         image_path: &str,
         agent: &Agent<CompletionModel>,
     ) -> Result<String, anyhow::Error> {
+        info!("开始推理: {:?}", image_path);
         // Read image and convert to base64
         let image_bytes = fs::read(image_path).await?;
         let image_base64 = BASE64_STANDARD.encode(image_bytes);
-
         // Compose `Image` for prompt
         let image = Image {
             data: format!("data:image/jpeg;base64,{}", image_base64),
@@ -111,16 +112,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_openai_image(){
-        let client = openai::Client::from_url("", "http://10.40.83.188:8000/v1")
+        let client = openai::Client::from_url("", "http://10.40.83.188:11434/v1")
             // let client = ollama::Client::from_url(&self.config.base_url)
-            .agent("InternVL3-9B")
+            .agent("gemma3:27b-it-qat")
             .temperature(0.5)
             .preamble("你是一个图像处理助手，你的任务是根据用户提供的图片进行推理和处理。")
             .context("请描述图片内容")
             .build();
 
         // Read image and convert to base64
-        let image_bytes = fs::read("src/images/000000.jpg").await.unwrap();
+        let image_bytes = fs::read("images/摆摊经营/000000.jpg").await.unwrap();
         let image_base64 = BASE64_STANDARD.encode(image_bytes);
 
         let image_str = format!("data:image/jpeg;base64,{}", image_base64);

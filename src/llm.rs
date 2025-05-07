@@ -24,13 +24,13 @@ pub struct LLMConfig {
     model: String,
     temperature: f64,
     system_prompt: String,
-    result_prompt:String,
+    result_prompt: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AlgorithmConfig {
     id: String,
-    name: String,
+    pub name: String,
     prompt: String,
     activate: bool,
 }
@@ -42,6 +42,11 @@ impl LLM {
         // Read algorithm config file
         let algorithms: Vec<AlgorithmConfig> =
             serde_json::from_str(fop.read_algorithm_config().unwrap().as_str()).unwrap();
+        // 过滤掉没有开启的算法
+        let algorithms = algorithms
+            .into_iter()
+            .filter(|a| a.activate)
+            .collect::<Vec<_>>();
 
         Self { config, algorithms }
     }
@@ -54,12 +59,17 @@ impl LLM {
     }
 
     // 实例化agent
-    pub fn build_agent(&self, algorithm_name: &str) -> Result<Agent<CompletionModel>, anyhow::Error> {
+    pub fn build_agent(
+        &self,
+        algorithm_name: &str,
+    ) -> Result<Agent<CompletionModel>, anyhow::Error> {
         let algorithm = self
             .algorithms
             .iter()
             .find(|a| a.name == algorithm_name)
             .ok_or(anyhow::anyhow!("Algorithm not found"))?;
+
+        info!("算法配置: {:?}", algorithm);
 
         let client = openai::Client::from_url(&self.config.api_key, &self.config.base_url)
             // let client = ollama::Client::from_url(&self.config.base_url)
@@ -77,7 +87,8 @@ impl LLM {
         image_path: &str,
         agent: &Agent<CompletionModel>,
     ) -> Result<String, anyhow::Error> {
-        info!("开始推理: {:?}", image_path);
+        info!("\n\n");
+        info!(">=======开始推理: {:?}=======<", image_path);
         // Read image and convert to base64
         let image_bytes = fs::read(image_path).await?;
         let image_base64 = BASE64_STANDARD.encode(image_bytes);
@@ -111,7 +122,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_openai_image(){
+    async fn test_openai_image() {
         let client = openai::Client::from_url("", "http://10.40.83.188:11434/v1")
             // let client = ollama::Client::from_url(&self.config.base_url)
             .agent("gemma3:27b-it-qat")
@@ -132,7 +143,6 @@ mod tests {
             format: Some(ContentFormat::Base64),
             ..Default::default()
         };
-
 
         let resp = client.prompt(image).await.unwrap();
         println!("Response: {:#?}", resp);

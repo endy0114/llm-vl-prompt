@@ -45,7 +45,7 @@ async fn main() -> Result<(), anyhow::Error> {
         let llm = llm::LLM::new(&file_op);
         info!("推理对象构建成功");
         // 获取图片列表
-        let images = file_op.get_image_list()?;
+        let images = file_op.get_image_list(&llm.algorithms)?;
         let algs: Vec<String> = images.iter().map(|i| i.0.clone()).collect();
         info!("图片列表获取成功:{:?}", algs);
         info!("加载了{}个算法", &llm.algorithms.len());
@@ -54,10 +54,18 @@ async fn main() -> Result<(), anyhow::Error> {
         for (algorithm, image_list) in images {
             // 判断算法是否定义
             if llm.check_algorithm(&algorithm) {
+                info!(" >>>> 算法: {:?} <<<< ", algorithm);
                 let llm_client = llm.build_agent(&algorithm)?;
                 for image in image_list {
                     let resp = llm.chat(&image, &llm_client).await?;
-                    file_op.save_inference_result(&algorithm, &image, &resp, cli.parse_json)?;
+                    match file_op.save_inference_result(&algorithm, &image, &resp, cli.parse_json) {
+                        Ok(_) => {}
+                        Err(e) => {
+                            info!("图片: {:?} 推理失败: {:?}", image, e);
+                            let error = format!("图片: {:?} 推理失败: {:?}", image, e.to_string());
+                            file_op.save_error_info(&error)?;
+                        }
+                    }
                 }
             }
         }

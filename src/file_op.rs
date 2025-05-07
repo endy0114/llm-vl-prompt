@@ -9,6 +9,8 @@ use serde_json::Value;
 use tracing::info;
 use walkdir::WalkDir;
 
+use crate::llm::AlgorithmConfig;
+
 ///
 /// 文件操作：
 /// 1. 读取配置文件
@@ -21,6 +23,7 @@ pub struct FileOp {
     pub algorithm_config_path: String,
     pub image_path: String,
     result_file: File,
+    error_file: File,
 }
 
 impl FileOp {
@@ -30,24 +33,31 @@ impl FileOp {
         if !result_path.exists() {
             fs::create_dir_all(result_path).unwrap();
         }
-
+        // 创建结果文件
         let result_file = fs::OpenOptions::new()
             .create(true)
             .append(true)
             .open("result/result.txt".to_string())
+            .unwrap();
+        // 问题记录文件
+        let error_file = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("result/error.txt".to_string())
             .unwrap();
         Self {
             config_path,
             algorithm_config_path,
             image_path,
             result_file,
+            error_file,
         }
     }
 
     // 重命名图片文件
     pub async fn rename_image(&self) -> Result<(), anyhow::Error> {
         // 获取图片列表
-        let image_list = self.get_image_list()?;
+        let image_list = self.get_all_image_list()?;
         // 遍历图片列表，获取图片文件的后缀名，将遍历序号格式化成6位长度的字符串，然后拼接后缀名，生成新的文件名
         for file_info in image_list {
             let file_list = &file_info.1.clone();
@@ -76,7 +86,7 @@ impl FileOp {
         Ok(algorithm_config_content)
     }
 
-    pub fn get_image_list(&self) -> Result<Vec<(String, Vec<String>)>, anyhow::Error> {
+    pub fn get_image_list(&self,algorithm: &Vec<AlgorithmConfig>) -> Result<Vec<(String, Vec<String>)>, anyhow::Error> {
         let dir = Path::new(self.image_path.as_str());
         let mut image_files: Vec<(String, Vec<String>)> = Vec::new();
 
@@ -84,7 +94,31 @@ impl FileOp {
             for entry in fs::read_dir(dir)? {
                 let entry = entry?;
                 let path = entry.path();
-                if path.is_dir() {
+                let algorithm_name = entry.file_name().to_string_lossy().to_string();
+                if path.is_dir() && algorithm.iter().any(|a| a.name == algorithm_name) {
+                    let mut files = Vec::new();
+                    for file in WalkDir::new(path) {
+                        let file = file?;
+                        if file.file_type().is_file() {
+                            files.push(file.path().to_string_lossy().to_string());
+                        }
+                    }
+                    image_files.push((algorithm_name, files));
+                }
+            }
+        }
+        Ok(image_files)
+    }
+
+    pub fn get_all_image_list(&self) -> Result<Vec<(String, Vec<String>)>, anyhow::Error> {
+        let dir = Path::new(self.image_path.as_str());
+        let mut image_files: Vec<(String, Vec<String>)> = Vec::new();
+
+        if dir.is_dir() {
+            for entry in fs::read_dir(dir)? {
+                let entry = entry?;
+                let path = entry.path();
+                if path.is_dir()  {
                     let mut files = Vec::new();
                     for file in WalkDir::new(path) {
                         let file = file?;
@@ -108,29 +142,45 @@ impl FileOp {
         parse_json: bool,
     ) -> Result<(), anyhow::Error> {
         let pas_result = if parse_json {
-            let json = self.parse_json_from_markdown(result)?;
-            let mut res = serde_json::from_str::<Value>(&json)?;
+            match self.parse_json_from_markdown(result) {
+                Ok(json) => {
+                    let mut res = serde_json::from_str::<Value>(&json)?;
 
-            // 如果结果为true，则将图片复制到result目录下
-            if res["result"].as_bool().unwrap_or(false) {
-                let image_path = Path::new(image);
-                let new_image_path = Path::new("result").join(format!(
-                    "{}_{}",
-                    algorithm,
-                    image_path.file_name().unwrap().to_string_lossy()
-                ));
-                fs::copy(image, new_image_path)?;
+                    let image_path = Path::new(image);
+                    // 如果结果为true，则将图片复制到result目录下
+                    if res["result"].as_bool().unwrap_or(false) {
+                        let new_image_path = Path::new("result").join(format!(
+                            "{}_{}",
+                            algorithm,
+                            image_path.file_name().unwrap().to_string_lossy()
+                        ));
+                        fs::copy(image, new_image_path)?;
+                    }
+
+                    res.as_object_mut().unwrap().insert(
+                        "algorithm".to_string(),
+                        Value::String(algorithm.to_string()),
+                    );
+                    res.as_object_mut().unwrap().insert(
+                        "image".to_string(),
+                        Value::String(
+                            image_path
+                                .file_name()
+                                .unwrap()
+                                .to_string_lossy()
+                                .to_string(),
+                        ),
+                    );
+                    res.to_string()
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!(
+                        "解析json失败: {} \n推理结果: {}",
+                        e,
+                        result
+                    ));
+                }
             }
-
-            res.as_object_mut().unwrap().insert(
-                "algorithm".to_string(),
-                Value::String(algorithm.to_string()),
-            );
-            res.as_object_mut()
-                .unwrap()
-                .insert("image".to_string(), Value::String(image.to_string()));
-            info!("解析的json数据: {:?}", res);
-            res.to_string()
         } else {
             format!(
                 "algorithm：{:?} image ：{:?} 检测结果:\n{:#?}",
@@ -139,6 +189,13 @@ impl FileOp {
         };
         self.result_file.write_all(pas_result.as_bytes())?;
         self.result_file.write_all("\n".as_bytes())?;
+        Ok(())
+    }
+
+    // 保存错误信息
+    pub fn save_error_info(&mut self, error: &str) -> Result<(), anyhow::Error> {
+        self.error_file
+            .write_all(format!("{}\n\n", error).as_bytes())?;
         Ok(())
     }
 
@@ -171,7 +228,7 @@ mod tests {
             "src/algorithm_config.yaml".to_string(),
             "/home/pengwei/文档/武汉云测试/2025-04-29".to_string(),
         );
-        let image_list = file_op.get_image_list().unwrap();
+        let image_list = file_op.get_all_image_list().unwrap();
         for (dir, files) in image_list {
             println!("Directory: {}", dir);
             for file in files {

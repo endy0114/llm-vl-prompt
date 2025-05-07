@@ -1,7 +1,7 @@
 {
     "api_key": "sk-xxxxxx",
-    "base_url": "http://10.40.83.188:11434/v1",
-    "model": "gemma3:27b-it-qat",
+    "base_url": "http://127.0.0.1:11434/v1",
+    "model": "gemma3:4b-it-qat",
     "temperature": 0.5,
     "system_prompt": "你是一个智能安防助手，负责分析监控抓拍图片中的场景，并判断是否存在特定的行为或者事件。",
     "result_prompt":"返回结果使用json格式，包含两个字段：\"result\"和\"confidence\"。\"result\"的值为布尔值，true表示存在摆摊经营，false表示不存在；\"confidence\"的值为0到1之间的浮点数，表示判断结果的置信度。"

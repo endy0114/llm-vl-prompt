@@ -5,23 +5,106 @@
 
 ## 工具使用
 
+ - **指令：**
+
 ```shell
 
 Usage: lvt.exe [OPTIONS]
 
 Options:
-  -c, --config <CONFIG>                      [default: config/config.json]     // 著配置文件路径，不需要指定，按照需求修改即可
-  -a, --algorithm-config <ALGORITHM_CONFIG>  [default: config/algorithm.json]  // 算法定义，不需要指定，按照需求修改即可
-  -i, --image-path <IMAGE_PATH>              [default: images]                 // 图片文件的路径，需要指定
-  -r, --rename                                                                 // 对图片进行重命名，默认否
-  -p, --parse-json                                                             // 是否解析推理结果里面的json数据，默认否
-  -h, --help                                 Print help
-  -V, --version                              Print version
+  -c, --config-path <CONFIG_PATH>  [default: config]  ## 配置文件路径，默认为当前config目录
+  -i, --image-path <IMAGE_PATH>    [default: images]  ## 解析图片路径，默认为当前images目录
+  -r, --rename                                        ## 对解析图片进行重命名，默认为false
+  -p, --parse-json                                    ## 开启对推理结果的json进行解析，默认为true
+  -h, --help                       Print help
+  -V, --version                    Print version
 
 ```
 
-**使用示例：** `lvt lvt.exe -i D:\workspace\2025-04-29 -p`
-命令执行完成后，会在命令窗口所在的路径创建**result**文件夹，将检测为**true**的图片复制到文件夹下面，并生成**result.txt**结果文件
+- **软件工程目录：** 如下
+
+```
+
+-/
+  - config
+    - config.json
+    - algorithm.json
+  - images
+    - 算法xxx
+    - 算法xxx
+    - 算法xxx
+  - lvt.exe
+
+```
+
+- **使用示例：** `lvt.exe -c config2 -i images`
+
+  > 命令执行完成后，会在命令窗口所在的路径创建**result**文件夹，将检测为**true**的图片复制到文件夹下面，并生成**result.txt**结果文件
+
+
+- **本地运行：** `cargo run`
+
+- **配置文件介绍：**
+
+**config.json** ：
+
+```json
+{
+    "api_key": "sk-xxxxxx",
+    "base_url": "http://127.0.0.1:11434/v1",
+    "model": "gemma3:4b-it-qat",
+    "temperature": 0.5,
+    "system_prompt": "你是一个智能安防助手，负责分析监控抓拍图片中的场景，并判断是否存在特定的行为或者事件。",
+    "result_prompt":"返回结果使用json格式，包含两个字段：\"result\"和\"confidence\"。\"result\"的值为布尔值，true表示存在摆摊经营，false表示不存在；\"confidence\"的值为0到1之间的浮点数，表示判断结果的置信度。"
+}
+
+```
+
+| 字段名称      | 默认值                    | 作用           | 备注                             |
+| ------------- | ------------------------- | -------------- | -------------------------------- |
+| api_key       | sk-xxxxxx                 | 模型请求验证   | 模型访问需求                     |
+| base_url      | http://127.0.0.1:11434/v1 | 模型服务地址   | 模型访问需求                     |
+| model         | gemma3:4b-it-qat          | 使用模型的名称 | 模型访问需求                     |
+| temperature   | 0.5                       | 模型推理活跃度 | 0到2之间，值越大结果不确定性越高 |
+| system_prompt | 无                        | 系统提示词定义 | 作为全局限定                     |
+| result_prompt | 无                        | 返回结果定义   | 作为全局限定                     |
+
+
+**algorithm.json** ：
+
+```json
+[
+    {
+        "id": "00001",
+        "name": "摆摊经营",
+        "prompt": "这是一张路口的监控抓帕图片，包含了一个摆摊经营的场景。请根据图片中的内容，判断是否存在摆摊经营的行为。",
+        "activate": false
+    },
+    {
+        "id": "00002",
+        "name": "车辆违停",
+        "prompt": "这是一张街道监控抓拍图片，包含了一个车辆违停的场景。请根据图片中的内容，判断是否存在车辆违停的行为。",
+        "activate": false
+    },
+    {
+        "id": "00003",
+        "name": "烟火监测",
+        "prompt": "这是一张城市监控的抓拍图片，有近景和远景，有些是红外光抓拍有些是彩光抓拍。根据图片里面的亮光判断是否有烟火，需要注意晚上路灯的干扰。",
+        "activate": true
+    }
+]
+
+```
+
+| 字段名称 | 默认值 | 作用                             | 备注                   |
+| -------- | ------ | -------------------------------- | ---------------------- |
+| id       | 无     | 唯一标识                         | 自定义模型编号         |
+| name     | 无     | 与images目录下面的检测文件夹对应 | 自定义模型名称         |
+| prompt   | 无     | 算法目标定义                     | 算法功能提示词         |
+| activate | 无     | 是否开启                         | 灵活配置需要检测的算法 |
+
+
+
 
 ## 检测提示词编写技巧
 

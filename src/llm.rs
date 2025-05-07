@@ -111,11 +111,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_openai_image(){
-        let client = openai::Client::from_url("", "http://localhost:11434/v1")
+        let client = openai::Client::from_url("", "http://10.40.83.188:8000/v1")
             // let client = ollama::Client::from_url(&self.config.base_url)
-            .agent("gemma3:4b-it-qat")
+            .agent("InternVL3-9B")
             .temperature(0.5)
             .preamble("你是一个图像处理助手，你的任务是根据用户提供的图片进行推理和处理。")
+            .context("请描述图片内容")
             .build();
 
         // Read image and convert to base64

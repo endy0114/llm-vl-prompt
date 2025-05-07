@@ -20,9 +20,16 @@ async fn main() -> Result<(), anyhow::Error> {
     let cli = cli::Cli::parse();
 
     // 构建文件操作对象
+    // 绝对定位
+    // let mut file_op = file_op::FileOp::new(
+    //     format!("{}/{}", conf_prefix, cli.config.unwrap()),
+    //     format!("{}/{}", conf_prefix, cli.algorithm_config.unwrap()),
+    //     cli.image_path.unwrap(),
+    // );
+
     let mut file_op = file_op::FileOp::new(
-        format!("{}/{}", conf_prefix, cli.config.unwrap()),
-        format!("{}/{}", conf_prefix, cli.algorithm_config.unwrap()),
+        cli.config.unwrap(),
+        cli.algorithm_config.unwrap(),
         cli.image_path.unwrap(),
     );
 

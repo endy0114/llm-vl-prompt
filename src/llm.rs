@@ -17,22 +17,22 @@ pub struct LLM {
     pub algorithms: Vec<AlgorithmConfig>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 pub struct LLMConfig {
-    api_key: String,
-    base_url: String,
-    model: String,
-    temperature: f64,
-    system_prompt: String,
-    result_prompt: String,
+    pub api_key: String,
+    pub base_url: String,
+    pub model: String,
+    pub temperature: f64,
+    pub system_prompt: String,
+    pub result_prompt: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 pub struct AlgorithmConfig {
-    id: String,
+    pub id: String,
     pub name: String,
-    prompt: String,
-    activate: bool,
+    pub prompt: String,
+    pub activate: bool,
 }
 
 impl LLM {

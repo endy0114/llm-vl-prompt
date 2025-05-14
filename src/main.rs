@@ -4,6 +4,7 @@ use tracing::info;
 mod cli;
 mod file_op;
 mod llm;
+mod serve;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {

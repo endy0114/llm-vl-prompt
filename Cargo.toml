@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.98"
+axum = {version = "0.8.4",features = ["multipart"] }
+tower-http = { version = "0.6.1", features = ["limit", "trace"] }
 base64 = "0.22.1"
 clap = { version = "4.5.37", features = ["derive"] }
 regex = "1.11.1"
